@@ -1,13 +1,12 @@
-
 FIXED_PRIOR = 1e9
 
 OMEGA_CDM_FID = 0.12
-H_FID         = 0.67
-#H_FID         = 0.6736
-AS_FID        = 2.100
-B1_VALUE      = 1.16
-B2_VALUE      = 0.2 # b2 and bG2 seem to influence a lot!
-BG2_VALUE     = 0.1 # b2 and bG2 seem to influence a lot!
+H_FID = 0.67
+# H_FID         = 0.6736
+AS_FID = 2.100
+B1_VALUE = 1.16
+B2_VALUE = 0.2  # b2 and bG2 seem to influence a lot!
+BG2_VALUE = 0.1  # b2 and bG2 seem to influence a lot!
 BGAMMA3_VALUE = 0.1
 BNABLA2_VALUE = 0.1
 CCT_2_0_VALUE = 0.1
@@ -16,13 +15,11 @@ CCT_2_4_VALUE = 0.0
 CCT_4_4_VALUE = 0.0
 CCT_4_6_VALUE = 0.0
 
-#OMEGA_CDM_FID = 0.12 
-#H_FID         = 0.6736
-#B1_VALUE      = 1.16706
-#B2_VALUE      = -0.017471969999999996
-#BG2_VALUE     = -0.022051405
-#BGAMMA3_VALUE = 0.00974875
-#BNABLA2_VALUE = 0.12676013
-#0.12, 0.6736, 1.167069,  -0.017471969999999996, -0.022051405, 0.00974875, 0.12676013,     0.0, 0.0
-
-
+# OMEGA_CDM_FID = 0.12
+# H_FID         = 0.6736
+# B1_VALUE      = 1.16706
+# B2_VALUE      = -0.017471969999999996
+# BG2_VALUE     = -0.022051405
+# BGAMMA3_VALUE = 0.00974875
+# BNABLA2_VALUE = 0.12676013
+# 0.12, 0.6736, 1.167069,  -0.017471969999999996, -0.022051405, 0.00974875, 0.12676013,     0.0, 0.0
