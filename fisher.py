@@ -1,7 +1,9 @@
 import numpy as np
 
 import covariance
+import fiducial_cosmo
 import modellib
+from config import Config
 
 # def fisher(ntracers, eps=0.04, noise_amplitude=0.0, kmin_value = 0.001, kmax_value = 0.15, V1440_factor = 1., nbar_value = 4e-4, b1set = [], b2set = [], bG2set = [], bGamma3set = [], bNabla2set = [], cct_2_0_set = [], cct_2_2_set = [], cct_2_4_set = [], cct_4_4_set = [], cct_4_6_set = [], omega_cdm_fid = OMEGA_CDM_FID, h_fid = H_FID, As_fid = AS_FID, includeAs = False, nonlin = True, nocross_stoch = False, RSD = False, multipoles = [True, True, True]):
 
@@ -12,9 +14,6 @@ def fisher(
     nocross_spec=False,
     RSD=False,
     multipoles=[True, True, True],
-    nbarvalue=1e-4,
-    V1440_factor=1,
-    includeAs=False,
     assymetric_kmax=[],
 ):
     """
@@ -196,6 +195,52 @@ def fisher(
 
 ### the analysis
 if __name__ == "__main__":
-    ### ST
-    model = modellib.set_model(1)
-    fisher(model)
+    config = Config.from_cli()
+
+    config_args = {
+        "ntracers": config["tracers.ntracers"],
+        "eps": config["tracers.eps"],
+        "noise_amplitude": config["tracers.noise_amplitude"],
+        "kmin_value": config["tracers.kmin_value"],
+        "kmax_value": config["tracers.kmax_value"],
+        "V1440_factor": config["tracers.V1440_factor"],
+        "nbar_value": config["tracers.nbar_value"],
+        "b1set": config["bias.b1set"],
+        "b2set": config["bias.b2set"],
+        "bG2set": config["bias.bG2set"],
+        "bGamma3set": config["bias.bGamma3set"],
+        "bNabla2set": config["bias.bNabla2set"],
+        "cct_2_0_set": config["bias.cct_2_0_set"],
+        "cct_2_2_set": config["bias.cct_2_2_set"],
+        "cct_2_4_set": config["bias.cct_2_4_set"],
+        "cct_4_4_set": config["bias.cct_4_4_set"],
+        "cct_4_6_set": config["bias.cct_4_6_set"],
+        "omega_cdm_fid": config["cosmology.omega_cdm_fid"],
+        "h_fid": config["cosmology.h_fid"],
+        "As_fid": config["cosmology.As_fid"],
+        "f_NL_fid": config["cosmology.f_NL_fid"],
+        "includeAs": config["cosmology.includeAs"],
+        "nonlin": config["power_spectrum.nonlin"],
+        "nocross_stoch": config["power_spectrum.nocross_stoch"],
+        "RSD": config["power_spectrum.RSD"],
+        "multipoles": config["power_spectrum.multipoles"],
+        "active_bias": config["power_spectrum.active_bias"],
+        "active_stoch": config["power_spectrum.active_stoch"],
+        "open_precomputed_files": config["caching.open_precomputed_files"],
+        "save_precomputed_files": config["caching.save_precomputed_files"],
+        "redshift": config["power_spectrum.redshift"],
+    }
+
+    default_args = {
+        "omega_cdm_fid": fiducial_cosmo.OMEGA_CDM_FID,
+        "h_fid": fiducial_cosmo.H_FID,
+        "As_fid": fiducial_cosmo.AS_FID,
+        "f_NL_fid": fiducial_cosmo.F_NL_VALUE,
+    }
+
+    model = modellib.set_model(**{**default_args, **config_args})
+    fisher(
+        model,
+        RSD=config["power_spectrum.RSD"],
+        multipoles=config["power_spectrum.multipoles"],
+    )
