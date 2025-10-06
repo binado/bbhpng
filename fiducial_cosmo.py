@@ -4,6 +4,7 @@ OMEGA_CDM_FID = 0.12
 H_FID = 0.67
 # H_FID         = 0.6736
 AS_FID = 2.100
+F_NL_VALUE = 0.0
 B1_VALUE = 1.16
 B2_VALUE = 0.2  # b2 and bG2 seem to influence a lot!
 BG2_VALUE = 0.1  # b2 and bG2 seem to influence a lot!

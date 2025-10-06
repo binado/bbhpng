@@ -248,6 +248,7 @@ def set_model(
     omega_cdm_fid=OMEGA_CDM_FID,
     h_fid=H_FID,
     As_fid=AS_FID,
+    f_NL_fid=F_NL_VALUE,
     includeAs=False,
     nonlin=True,
     nocross_stoch=False,
@@ -307,6 +308,15 @@ def set_model(
             "type": "cosmo",
             "traceridx": [-1],
         }
+
+    cosmo["f_NL"] = {
+        "name": "f_NL_",
+        "value": f_NL_fid,
+        "priorsigma": FIXED_PRIOR,
+        "active": True,
+        "type": "cosmo",
+        "traceridx": [-1],
+    }
 
     # active lists for theory
     # active_bias  = [True, True, True, True, True, True, True, True, True]

@@ -89,6 +89,10 @@ class Model:
         # Aggregate all parameters and active parameters
         self._initialize_parameters()
 
+        # Cache cosmological parameter ordering for later slicing
+        self.cosmo_names = list(self.cosmo_parameters.keys())
+        self.n_cosmo = len(self.cosmo_names)
+
         # Setup basic attributes
         self.kmin = kmin
         self.kmax = kmax
@@ -103,9 +107,10 @@ class Model:
 
         # Store fiducial cosmological parameters
         self.z = z
-        self.omega_cdm_fid = self.all_parameters_values[0]
-        self.h_fid = self.all_parameters_values[1]
-        self.As_fid = self.all_parameters_values[2]
+        self.omega_cdm_fid = self.cosmo_parameters["omegacdm"]["value"]
+        self.h_fid = self.cosmo_parameters["h"]["value"]
+        self.As_fid = self.cosmo_parameters["As"]["value"]
+        self.f_NL_fid = self.cosmo_parameters["f_NL"]["value"]
 
         # Additional model parameters
         self.p1loop = p1loop
@@ -316,7 +321,7 @@ class Model:
         """
 
         # get bias and setoch set
-        omega_cdm, h, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
+        _, h, f_NL, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
             args
         )
 
@@ -342,6 +347,7 @@ class Model:
                         stoch_setAB,
                         self.nbarsample[tracer_A],
                         self.nbarsample[tracer_B],
+                        f_NL,
                     )
                 else:
                     spectrum = self.spec_model_nlin_rsd(
@@ -368,29 +374,33 @@ class Model:
         Initialize model-specific data such as the fiducial spectrum and tracer-specific values.
         """
 
-        omega_cdm, h, As = args[0:3]
+        cosmo_values = args[: self.n_cosmo]
+        cosmo_map = dict(zip(self.cosmo_names, cosmo_values))
+
+        omega_cdm = cosmo_map.get("omegacdm", self.omega_cdm_fid)
+        h = cosmo_map.get("h", self.h_fid)
+        f_NL = cosmo_map.get("f_NL", self.f_NL_fid)
+
         bias_set = []
+        bias_start = self.n_cosmo
         for idx_tracers in range(self.ntracers):
-            bias_set.append(
-                args[3 + idx_tracers * self.nbias : 3 + (idx_tracers + 1) * self.nbias]
-            )
-        stochastic_set = []
+            start = bias_start + idx_tracers * self.nbias
+            end = bias_start + (idx_tracers + 1) * self.nbias
+            bias_set.append(args[start:end])
 
         if FLAG_NOCROSS_SPEC:
             idxmax = self.ntracers
         else:
             idxmax = self.ntracerssum
 
+        stochastic_set = []
+        stoch_start = bias_start + self.ntracers * self.nbias
         for idx_tracers in range(idxmax):
-            stochastic_set.append(
-                args[
-                    3 + self.ntracers * self.nbias + idx_tracers * self.nstoch : 3
-                    + self.ntracers * self.nbias
-                    + (idx_tracers + 1) * self.nstoch
-                ]
-            )
+            start = stoch_start + idx_tracers * self.nstoch
+            end = stoch_start + (idx_tracers + 1) * self.nstoch
+            stochastic_set.append(args[start:end])
 
-        return omega_cdm, h, bias_set, stochastic_set
+        return omega_cdm, h, f_NL, bias_set, stochastic_set
 
     def get_derivatives(self, analytic_bias=True, FLAG_NOCROSS_SPEC=False):
         """
@@ -469,6 +479,7 @@ class Model:
         stoch_set,
         nbarA_loc,
         nbarB_loc,
+        f_NL,
     ):
         """
         Compute the model spectrum using tracer parameters.
@@ -480,9 +491,13 @@ class Model:
         - bias_setA, bias_setB: Bias parameter sets for tracers A and B.
         - stoch_set: Stochastic parameter set.
         - nbarA_loc, nbarB_loc: Shot noise values for tracers A and B.
+        - f_NL: value of f_NL
 
         Returns:
         - Non-linear model spectrum.
+
+        Notes:
+            Code currently computes f_NL contributions only up to linear order!
         """
         # Unpack bias parameters
         b1_A, b2_A, bG2_A, bGamma3_A, bNabla2_A = bias_setA
@@ -496,7 +511,9 @@ class Model:
 
         # Compute the non-linear spectrum
         result = (
-            b1_A * b1_B * (pk_mult_loc[14] + self.p1loop * pk_mult_loc[0])
+            b1_A
+            * b1_B
+            * (pk_mult_loc[14] + self.p1loop * pk_mult_loc[0] + f_NL * pk_mult_loc[53])
             + self.p1loop
             * (bNabla2_A * b1_B + bNabla2_B * b1_A)
             * pk_mult_loc[10]
@@ -989,10 +1006,11 @@ class Model:
 
             # Handle cosmological vs. non-cosmological parameters
             if self.all_parameters[param_idx].get("type") == "cosmo":
+                cosmo_map = dict(zip(self.cosmo_names, args[: self.n_cosmo]))
                 pk_mult_loc, _, fz = self.compute_cosmo_func(
-                    args[0],
-                    args[1],
-                    args[2],
+                    cosmo_map.get("omegacdm", self.omega_cdm_fid),
+                    cosmo_map.get("h", self.h_fid),
+                    cosmo_map.get("As", self.As_fid),
                     openfile=self.open_precomputed_files,
                     savefile=self.save_precomputed_files,
                 )
@@ -1027,7 +1045,7 @@ class Model:
 
     def analytical_derivative(self, FUNC, param_idx):
         # get bias and setoch set using fiducial
-        omega_cdm, h, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
+        _, h, _, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
             self.all_parameters_values
         )
 
