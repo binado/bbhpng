@@ -77,7 +77,7 @@ class Model:
         self.save_precomputed_files = save_precomputed_files
 
         if not self.RSD:
-            self.nbias = 5
+            self.nbias = 6
             self.nstoch = 3
         else:
             self.nbias = 9
@@ -321,9 +321,7 @@ class Model:
         """
 
         # get bias and setoch set
-        _, h, f_NL, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
-            args
-        )
+        _, h, f_NL, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(args)
 
         # Initialize list to store spectra
         spectras = []
@@ -500,8 +498,8 @@ class Model:
             Code currently computes f_NL contributions only up to linear order!
         """
         # Unpack bias parameters
-        b1_A, b2_A, bG2_A, bGamma3_A, bNabla2_A = bias_setA
-        b1_B, b2_B, bG2_B, bGamma3_B, bNabla2_B = bias_setB
+        b1_A, b2_A, bG2_A, bGamma3_A, bNabla2_A, bphi_A = bias_setA
+        b1_B, b2_B, bG2_B, bGamma3_B, bNabla2_B, bphi_B = bias_setB
 
         # Unpack stochastic parameters
         cshot, c0, c2 = stoch_set
@@ -511,9 +509,8 @@ class Model:
 
         # Compute the non-linear spectrum
         result = (
-            b1_A
-            * b1_B
-            * (pk_mult_loc[14] + self.p1loop * pk_mult_loc[0] + f_NL * pk_mult_loc[53])
+            b1_A * b1_B * (pk_mult_loc[14] + self.p1loop * pk_mult_loc[0])
+            + (b1_A * bphi_B + b1_B * bphi_A) * f_NL * pk_mult_loc[53]
             + self.p1loop
             * (bNabla2_A * b1_B + bNabla2_B * b1_A)
             * pk_mult_loc[10]

@@ -10,11 +10,14 @@ B2_VALUE = 0.2  # b2 and bG2 seem to influence a lot!
 BG2_VALUE = 0.1  # b2 and bG2 seem to influence a lot!
 BGAMMA3_VALUE = 0.1
 BNABLA2_VALUE = 0.1
+BPHI_VALUE = 0.0
 CCT_2_0_VALUE = 0.1
 CCT_2_2_VALUE = 0.0
 CCT_2_4_VALUE = 0.0
 CCT_4_4_VALUE = 0.0
 CCT_4_6_VALUE = 0.0
+
+SPHERICAL_COLLAPSE_THRESHOLD = 1.686
 
 # OMEGA_CDM_FID = 0.12
 # H_FID         = 0.6736

@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import numpy as np
 
 import covariance
@@ -215,6 +217,8 @@ if __name__ == "__main__":
         "cct_2_4_set": config["bias.cct_2_4_set"],
         "cct_4_4_set": config["bias.cct_4_4_set"],
         "cct_4_6_set": config["bias.cct_4_6_set"],
+        "use_universality_relation": config["bias.use_universality_relation"],
+        "universality_relation_p": config["bias.universality_relation_p"],
         "omega_cdm_fid": config["cosmology.omega_cdm_fid"],
         "h_fid": config["cosmology.h_fid"],
         "As_fid": config["cosmology.As_fid"],
@@ -238,9 +242,13 @@ if __name__ == "__main__":
         "f_NL_fid": fiducial_cosmo.F_NL_VALUE,
     }
 
-    model = modellib.set_model(**{**default_args, **config_args})
+    merged_args = {**default_args, **config_args}
+    if config["verbose"]:
+        pprint(merged_args)
+    model = modellib.set_model(**merged_args)
     fisher(
         model,
+        analytic_bias=False,
         RSD=config["power_spectrum.RSD"],
         multipoles=config["power_spectrum.multipoles"],
     )

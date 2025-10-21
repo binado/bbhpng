@@ -32,7 +32,8 @@ def create_bias_params(
     bG2_value,
     bGamma3_value,
     b_ct_values,
-    activelist=[True, True, True, True, True, True, True, True, True],
+    b_phi_value,
+    activelist=[True, True, True, True, True, True, True, True, True, True],
     RSD=False,
 ):
     """Helper to create stochastic parameter dictionaries."""
@@ -76,6 +77,14 @@ def create_bias_params(
                 "value": b_ct_values[0],
                 "priorsigma": FIXED_PRIOR,
                 "active": activelist[4],
+                "type": "bias",
+                "traceridx": traceridx,
+            },
+            "b_phi": {
+                "name": "bphi_",
+                "value": b_phi_value,
+                "priorsigma": FIXED_PRIOR,
+                "active": activelist[9],
                 "type": "bias",
                 "traceridx": traceridx,
             },
@@ -240,6 +249,7 @@ def set_model(
     bG2set=[],
     bGamma3set=[],
     bNabla2set=[],
+    b_phiset=[],
     cct_2_0_set=[],
     cct_2_2_set=[],
     cct_2_4_set=[],
@@ -256,6 +266,8 @@ def set_model(
     multipoles=[True, True, True],
     active_bias=[True, True, True, True, True, True, True, True, True],
     active_stoch=[True, True, True],
+    use_universality_relation=False,
+    universality_relation_p=1,
     open_precomputed_files=True,
     save_precomputed_files=False,
     redshift=0,
@@ -323,19 +335,31 @@ def set_model(
     # active_stoch = [True, True, True]
     p1loop = 1.0
     if not nonlin:
-        active_bias = [True, False, False, False, False, False, False, False, False]
+        active_bias = [
+            True,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            True,
+        ]
         active_stoch = [True, False, False]
         p1loop = 0.0
 
     # Define bias parameters for two tracers (A and B)
     bias_set = []
     for i in range(ntracers):
-        b1_value, b2_value, bG2_value, bGamma3_value, bNabla2_value = (
+        b1_value, b2_value, bG2_value, bGamma3_value, bNabla2_value, b_phi_value = (
             B1_VALUE,
             B2_VALUE,
             BG2_VALUE,
             BGAMMA3_VALUE,
             BNABLA2_VALUE,
+            BPHI_VALUE,
         )
         cct_2_0_value, cct_2_2_value, cct_2_4_value, cct_4_4_value, cct_4_6_value = (
             CCT_2_0_VALUE,
@@ -361,6 +385,8 @@ def set_model(
             bGamma3_value += bGamma3set[i]
         if bNabla2set != []:
             bNabla2_value += bNabla2set[i]
+        if b_phiset != []:
+            b_phi_value += b_phiset[i]
         if cct_2_0_set != []:
             cct_2_0_value += cct_2_0_set[i]
         if cct_2_2_set != []:
@@ -383,7 +409,14 @@ def set_model(
                 cct_4_6_value,
             ]
 
-        print(b1_value, b2_value, bG2_value, bGamma3_value, bias_ct_values)
+        print(b1_value, b2_value, bG2_value, bGamma3_value, bias_ct_values, b_phi_value)
+        if use_universality_relation:
+            print("Using universality relation")
+            # Do not constrain b_phi
+            active_bias[-1] = False
+            b_phi_value = (
+                2 * (b1_value - universality_relation_p) * SPHERICAL_COLLAPSE_THRESHOLD
+            )
         bias_set.append(
             create_bias_params(
                 [i],
@@ -392,6 +425,7 @@ def set_model(
                 bG2_value,
                 bGamma3_value,
                 bias_ct_values,
+                b_phi_value,
                 activelist=active_bias,
                 RSD=RSD,
             )
