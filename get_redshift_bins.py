@@ -119,7 +119,7 @@ def main(
         Pivot wavenumber for computing effective volume.
     zmin : float
         Left edge of first bin. Defaults to 0
-    zmax: float
+    zmax : float
         Right edge of last bin. Defaults to np.inf, so that the maximum is
         inferred from the redshift array
     method : {"fixed", "equal"}, optional
@@ -136,7 +136,6 @@ def main(
     z = np.load(input_file)
     zmin = max(zmin, z.min())
     zmax = min(zmax, z.max())
-    breakpoint()
     bias = np.asarray(bias)
     nbins = bias.shape[0]
     labels, edges, number_of_sources = get_binning_data(
@@ -146,7 +145,8 @@ def main(
     centers = 0.5 * (left + right)
 
     cosmo = Class()
-    cosmo.set(z_max_pk=zmax, **DEFAULT_PARAMS, **kwargs)
+    zmax_pk = max(zmax, edges[-1])
+    cosmo.set(z_max_pk=zmax_pk, **DEFAULT_PARAMS, **kwargs)
     cosmo.compute()
 
     # Compute volume, kmin, nbar
