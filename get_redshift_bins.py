@@ -153,7 +153,7 @@ def main(
     )
     left, right = edges[:-1], edges[1:]
     centers = 0.5 * (left + right)
-    number_of_sources *= observing_time
+    number_of_sources = number_of_sources * observing_time
 
     cosmo = Class()
     zmax_pk = max(zmax, edges[-1])
