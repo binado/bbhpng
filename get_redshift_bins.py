@@ -14,8 +14,9 @@ the number of sources in each bin.
 
 import argparse
 import csv
+import sys
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Sequence
 
 import numpy as np
 from classy import Class
@@ -97,6 +98,7 @@ def main(
     sky_location_uncertainty: Optional[float] = None,
     observing_time: float = 1,
     method: Literal["fixed", "equal"] = "fixed",
+    comments: Sequence[str] = [],
     **kwargs,
 ) -> None:
     """
@@ -131,6 +133,9 @@ def main(
         Binning method to use. "fixed" creates bins with fixed width,
         while "equal" creates bins with equal numbers of sources (quantile-based).
         Default is "fixed".
+    comments : Sequence[list]
+        List of comments to be prepended to the output .csv file.
+        Ignored if output file extension is .npy
     kwargs:
         Parameters passed to the Class instance.
 
@@ -200,6 +205,9 @@ def main(
         np.save(output_filepath, **data)
     else:
         with open(output_filepath, mode="w") as f:
+            for comment in comments:
+                comment_formatted = f"# {comment.lstrip('#')}\n"
+                f.write(comment_formatted)
             writer = csv.DictWriter(f, fieldnames=data.keys())
             writer.writeheader()
             for i in range(nbins):
@@ -268,6 +276,7 @@ if __name__ == "__main__":
 
     # Parse arguments
     args = parser.parse_args()
+    comments = ["This table was generated with the command:", " ".join(sys.argv)]
 
     # Call main function with parsed arguments
     main(
@@ -280,4 +289,5 @@ if __name__ == "__main__":
         sky_location_uncertainty=args.sky_location_uncertainty,
         observing_time=args.observing_time,
         method=args.method,
+        comments=comments,
     )
