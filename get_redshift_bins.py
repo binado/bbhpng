@@ -75,17 +75,15 @@ def get_binning_data(
     ndarray (nbins,)
         number of samples per bin
     """
-    a_sorted = np.array(a, copy=True)
-    a_sorted.sort()
+    a = np.asarray(a)
     bin_labels = np.arange(1, nbins + 1, dtype=np.int64)
     if method == "fixed":
         bin_edges = np.linspace(amin, amax, nbins + 1)
     elif method == "equal":
         quantiles = np.linspace(0, 1, nbins + 1)
-        bin_edges = np.quantile(a_sorted, quantiles)
+        bin_edges = np.quantile(a, quantiles)
 
-    bin_edges_indices = np.searchsorted(a_sorted, bin_edges)
-    num_objects_per_bin = np.diff(bin_edges_indices).astype(np.int64)
+    num_objects_per_bin, _ = np.histogram(a, bins=bin_edges)
     return bin_labels, bin_edges, num_objects_per_bin
 
 
