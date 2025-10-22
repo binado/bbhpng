@@ -95,6 +95,7 @@ def main(
     zmin: float = 0,
     zmax: float = np.inf,
     sky_location_uncertainty: Optional[float] = None,
+    observing_time: float = 1,
     method: Literal["fixed", "equal"] = "fixed",
     **kwargs,
 ) -> None:
@@ -123,6 +124,9 @@ def main(
         inferred from the redshift array
     sky_location_uncertainty : float, optional
         If provided, will be used to calculate kmax for each bin (degree squared)
+    observing_time : float
+        Overall factor which multiplies the number of sources across all bins.
+        Defaults to 1.
     method : {"fixed", "equal"}, optional
         Binning method to use. "fixed" creates bins with fixed width,
         while "equal" creates bins with equal numbers of sources (quantile-based).
@@ -144,6 +148,7 @@ def main(
     )
     left, right = edges[:-1], edges[1:]
     centers = 0.5 * (left + right)
+    number_of_sources *= observing_time
 
     cosmo = Class()
     zmax_pk = max(zmax, edges[-1])
@@ -246,6 +251,12 @@ if __name__ == "__main__":
         help="Sky location uncertainty with which to calculate kmax (degree squared)",
     )
     parser.add_argument(
+        "--observing-time",
+        type=float,
+        default=1,
+        help="Overall factor which multiplies the number of sources across all bins",
+    )
+    parser.add_argument(
         "--method",
         choices=["fixed", "equal"],
         default="fixed",
@@ -267,5 +278,6 @@ if __name__ == "__main__":
         zmin=args.zmin,
         zmax=args.zmax,
         sky_location_uncertainty=args.sky_location_uncertainty,
+        observing_time=args.observing_time,
         method=args.method,
     )
