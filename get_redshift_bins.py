@@ -15,7 +15,7 @@ the number of sources in each bin.
 import argparse
 import csv
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 from classy import Class
@@ -96,6 +96,7 @@ def main(
     k_pivot: float,
     zmin: float = 0,
     zmax: float = np.inf,
+    sky_location_uncertainty: Optional[float] = None,
     method: Literal["fixed", "equal"] = "fixed",
     **kwargs,
 ) -> None:
@@ -122,6 +123,8 @@ def main(
     zmax : float
         Right edge of last bin. Defaults to np.inf, so that the maximum is
         inferred from the redshift array
+    sky_location_uncertainty : float, optional
+        If provided, will be used to calculate kmax for each bin (degree squared)
     method : {"fixed", "equal"}, optional
         Binning method to use. "fixed" creates bins with fixed width,
         while "equal" creates bins with equal numbers of sources (quantile-based).
@@ -166,6 +169,9 @@ def main(
     fkp_factor = fkp_factor_numerator / (fkp_factor_numerator + 1)
     effective_volume = np.sum(volume_diff * fkp_factor**2)
 
+    print(f"Total volume up to redshift {zmax:.1f}: {volume[-1]:.2f} Mpc^3")
+    print(f"Effective volume: {effective_volume:.2f} Mpc^3")
+
     data = {
         "bin": labels,
         "left_edge": left,
@@ -175,8 +181,16 @@ def main(
         "nbar": nbar,
         "kmin": kmin,
     }
-    print(f"Total volume up to redshift {zmax:.1f}: {volume[-1]:.2f} Mpc^3")
-    print(f"Effective volume: {effective_volume:.2f} Mpc^3")
+
+    if sky_location_uncertainty is not None:
+        sky_location_uncertainty_steradians = (
+            sky_location_uncertainty * (np.pi / 180) ** 2
+        )
+        da = dm / (1 + edges)
+        r = da * sky_location_uncertainty_steradians
+        kmax = 2 * np.pi / r
+        # Set kmax with respect to the right edge of the bin
+        data["kmax"] = kmax[1:]
 
     output_filepath = Path(output_file)
     if output_filepath.suffix == ".npz":
@@ -228,6 +242,12 @@ if __name__ == "__main__":
         "--zmax", type=float, default=np.inf, help="Right edge of last redshift bin"
     )
     parser.add_argument(
+        "--sky-location-uncertainty",
+        type=float,
+        default=None,
+        help="Sky location uncertainty with which to calculate kmax (degree squared)",
+    )
+    parser.add_argument(
         "--method",
         choices=["fixed", "equal"],
         default="fixed",
@@ -248,5 +268,6 @@ if __name__ == "__main__":
         k_pivot=args.k_pivot,
         zmin=args.zmin,
         zmax=args.zmax,
+        sky_location_uncertainty=args.sky_location_uncertainty,
         method=args.method,
     )
