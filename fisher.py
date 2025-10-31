@@ -63,7 +63,6 @@ def fisher(
         model, FLAG_NOCROSS_SPEC=nocross_spec, RSD=RSD, multipoles=multipoles
     )
     print("deriv, cov", np.array(derivatives).shape, np.array(cov).shape)
-
     print("Inverting covariance ")
     covm1 = np.linalg.inv(cov)
     try:
@@ -248,7 +247,7 @@ if __name__ == "__main__":
     model = modellib.set_model(**merged_args)
     fisher(
         model,
-        analytic_bias=False,
+        analytic_bias=True,
         RSD=config["power_spectrum.RSD"],
         multipoles=config["power_spectrum.multipoles"],
     )
