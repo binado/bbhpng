@@ -321,12 +321,15 @@ def set_model(
             "traceridx": [-1],
         }
 
+    # We set f_NL type to bias
+    # So that it doesn't trigger the recomputation
+    # of the power spectrum
     cosmo["f_NL"] = {
         "name": "f_NL_",
         "value": f_NL_fid,
         "priorsigma": FIXED_PRIOR,
         "active": True,
-        "type": "cosmo",
+        "type": "bias",
         "traceridx": [-1],
     }
 

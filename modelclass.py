@@ -232,76 +232,77 @@ class Model:
         """
         Compute wavenumber arrays and their corresponding weights.
         """
-        k = np.array(
-            [
-                0.00436332,
-                0.00690733,
-                0.01191144,
-                0.01681231,
-                0.02110734,
-                0.02586348,
-                0.03066663,
-                0.0351514,
-                0.03980047,
-                0.04462564,
-                0.04929755,
-                0.05408208,
-                0.05878054,
-                0.06337915,
-                0.06796408,
-                0.07265316,
-                0.0773745,
-                0.08206283,
-                0.08669998,
-                0.09151402,
-                0.09614883,
-                0.10081397,
-                0.10552219,
-                0.11013738,
-                0.11481222,
-                0.11955234,
-                0.12421079,
-                0.12884013,
-                0.13356501,
-                0.13828716,
-                0.14306583,
-                0.14776735,
-                0.15239276,
-                0.15710744,
-                0.16179708,
-                0.16642278,
-                0.17110649,
-                0.17579253,
-                0.18052566,
-                0.18520921,
-                0.18987729,
-                0.19453861,
-                0.19923207,
-                0.20393509,
-                0.20863545,
-                0.21333136,
-                0.21805128,
-                0.2227085,
-                0.22738634,
-                0.23205931,
-                0.2367079,
-                0.24136284,
-                0.24605665,
-                0.25077188,
-                0.25547436,
-                0.26018536,
-                0.26486027,
-                0.26955128,
-                0.2742491,
-                0.27894068,
-                0.2836418,
-                0.2883313,
-                0.29297578,
-                0.2976653,
-            ]
-        )
-
-        k = np.array(k, dtype=np.float64)
+        # k = np.array(
+        #     [
+        #         0.00436332,
+        #         0.00690733,
+        #         0.01191144,
+        #         0.01681231,
+        #         0.02110734,
+        #         0.02586348,
+        #         0.03066663,
+        #         0.0351514,
+        #         0.03980047,
+        #         0.04462564,
+        #         0.04929755,
+        #         0.05408208,
+        #         0.05878054,
+        #         0.06337915,
+        #         0.06796408,
+        #         0.07265316,
+        #         0.0773745,
+        #         0.08206283,
+        #         0.08669998,
+        #         0.09151402,
+        #         0.09614883,
+        #         0.10081397,
+        #         0.10552219,
+        #         0.11013738,
+        #         0.11481222,
+        #         0.11955234,
+        #         0.12421079,
+        #         0.12884013,
+        #         0.13356501,
+        #         0.13828716,
+        #         0.14306583,
+        #         0.14776735,
+        #         0.15239276,
+        #         0.15710744,
+        #         0.16179708,
+        #         0.16642278,
+        #         0.17110649,
+        #         0.17579253,
+        #         0.18052566,
+        #         0.18520921,
+        #         0.18987729,
+        #         0.19453861,
+        #         0.19923207,
+        #         0.20393509,
+        #         0.20863545,
+        #         0.21333136,
+        #         0.21805128,
+        #         0.2227085,
+        #         0.22738634,
+        #         0.23205931,
+        #         0.2367079,
+        #         0.24136284,
+        #         0.24605665,
+        #         0.25077188,
+        #         0.25547436,
+        #         0.26018536,
+        #         0.26486027,
+        #         0.26955128,
+        #         0.2742491,
+        #         0.27894068,
+        #         0.2836418,
+        #         0.2883313,
+        #         0.29297578,
+        #         0.2976653,
+        #     ]
+        # )
+        #
+        # k = np.array(k, dtype=np.float64)
+        k = np.geomspace(self.kmin, self.kmax, 64)
         deltak = np.diff(k)
         deltak = np.append(deltak, deltak[-1])  # Ensure same length as k
         Nk = k**2 * deltak * self.Vbox / (2.0 * np.pi**2.0)
@@ -1042,7 +1043,7 @@ class Model:
 
     def analytical_derivative(self, FUNC, param_idx):
         # get bias and setoch set using fiducial
-        _, h, _, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
+        _, h, f_NL, bias_set_full, stoch_set_full = self.get_cosmo_bias_stoch_set(
             self.all_parameters_values
         )
 
@@ -1066,22 +1067,10 @@ class Model:
                 count += 1
 
                 if paramtype == "bias":
-                    inA = tracer_A in self.all_parameters[param_idx].get("traceridx")
-                    inB = tracer_B in self.all_parameters[param_idx].get("traceridx")
-                    if not inA and not inB:
-                        spectrum = [0] * self.len_k * len_ell
-                    elif not inA and inB:
-                        spectrum = self.eval_derivative(
-                            paramname,
-                            1,
-                            h,
-                            bias_setA,
-                            bias_setB,
-                            stoch_setAB,
-                            self.nbarsample[tracer_A],
-                            self.nbarsample[tracer_B],
-                        )
-                    elif inA and not inB:
+                    traceridx = self.all_parameters[param_idx].get("traceridx")
+                    # Special handling for global parameters like f_NL (traceridx = [-1])
+                    if traceridx == [-1]:
+                        # Global parameter affects all tracer pairs
                         spectrum = self.eval_derivative(
                             paramname,
                             0,
@@ -1091,11 +1080,27 @@ class Model:
                             stoch_setAB,
                             self.nbarsample[tracer_A],
                             self.nbarsample[tracer_B],
+                            f_NL,
                         )
-                    elif inA and inB:
-                        prefactor = 2.0 if paramtype == "bias" else 1.0
-                        spectrum = prefactor * np.array(
-                            self.eval_derivative(
+                    else:
+                        inA = tracer_A in traceridx
+                        inB = tracer_B in traceridx
+                        if not inA and not inB:
+                            spectrum = [0] * self.len_k * len_ell
+                        elif not inA and inB:
+                            spectrum = self.eval_derivative(
+                                paramname,
+                                1,
+                                h,
+                                bias_setA,
+                                bias_setB,
+                                stoch_setAB,
+                                self.nbarsample[tracer_A],
+                                self.nbarsample[tracer_B],
+                                f_NL,
+                            )
+                        elif inA and not inB:
+                            spectrum = self.eval_derivative(
                                 paramname,
                                 0,
                                 h,
@@ -1104,8 +1109,23 @@ class Model:
                                 stoch_setAB,
                                 self.nbarsample[tracer_A],
                                 self.nbarsample[tracer_B],
+                                f_NL,
                             )
-                        )
+                        elif inA and inB:
+                            prefactor = 2.0 if paramtype == "bias" else 1.0
+                            spectrum = prefactor * np.array(
+                                self.eval_derivative(
+                                    paramname,
+                                    0,
+                                    h,
+                                    bias_setA,
+                                    bias_setB,
+                                    stoch_setAB,
+                                    self.nbarsample[tracer_A],
+                                    self.nbarsample[tracer_B],
+                                    f_NL,
+                                )
+                            )
                 if paramtype == "stoch":
                     Ais0 = (
                         tracer_A == self.all_parameters[param_idx].get("traceridx")[0]
@@ -1125,6 +1145,7 @@ class Model:
                                 stoch_setAB,
                                 self.nbarsample[tracer_A],
                                 self.nbarsample[tracer_B],
+                                f_NL,
                             )
                         )
                     else:
@@ -1150,27 +1171,32 @@ class Model:
         bG2_A, bG2_B = sp.symbols("bG2_A bG2_B")
         bGamma3_A, bGamma3_B = sp.symbols("bGamma3_A bGamma3_B")
         bNabla2_A, bNabla2_B = sp.symbols("bNabla2_A bNabla2_B")
+        bphi_A, bphi_B = sp.symbols("bphi_A bphi_B")
         c0, c2, h_loc, nbarmix, knormh_loc, knorm_loc = sp.symbols(
             "c0 c2 h_loc nbarmix knormh_loc knorm_loc"
         )
         k_loc = sp.symbols("k_loc")
+        f_NL = sp.symbols("f_NL")
 
         # Define symbolic multipole power spectrum terms
-        pk_mult_symbolic = sp.symbols("pk_mult_symbolic0:15")
+        pk_mult_symbolic = sp.symbols("pk_mult_symbolic0:54")
 
         # Construct the symbolic model expression
         expr = (
             b1_A * b1_B * (pk_mult_symbolic[14] + self.p1loop * pk_mult_symbolic[0])
-            + (bNabla2_A * b1_B + bNabla2_B * b1_A)
+            + (b1_A * bphi_B + b1_B * bphi_A) * f_NL * pk_mult_symbolic[53]
+            + self.p1loop
+            * (bNabla2_A * b1_B + bNabla2_B * b1_A)
             * pk_mult_symbolic[10]
             / knormh_loc**2
-            + 0.5 * (b1_A * b2_B + b1_B * b2_A) * pk_mult_symbolic[2]
-            + 0.25 * b2_A * b2_B * pk_mult_symbolic[1]
-            + (b1_A * bG2_B + b1_B * bG2_A) * pk_mult_symbolic[3]
-            + (b1_A * (bG2_B + 0.4 * bGamma3_B) + b1_B * (bG2_A + 0.4 * bGamma3_A))
+            + self.p1loop * 0.5 * (b1_A * b2_B + b1_B * b2_A) * pk_mult_symbolic[2]
+            + self.p1loop * 0.25 * b2_A * b2_B * pk_mult_symbolic[1]
+            + self.p1loop * (b1_A * bG2_B + b1_B * bG2_A) * pk_mult_symbolic[3]
+            + self.p1loop
+            * (b1_A * (bG2_B + 0.4 * bGamma3_B) + b1_B * (bG2_A + 0.4 * bGamma3_A))
             * pk_mult_symbolic[6]
-            + bG2_A * bG2_B * pk_mult_symbolic[5]
-            + 0.5 * (b2_A * bG2_B + b2_B * bG2_A) * pk_mult_symbolic[4]
+            + self.p1loop * bG2_A * bG2_B * pk_mult_symbolic[5]
+            + self.p1loop * 0.5 * (b2_A * bG2_B + b2_B * bG2_A) * pk_mult_symbolic[4]
         ) * h_loc**3
 
         # Add stochastic term
@@ -1190,6 +1216,9 @@ class Model:
             bGamma3_B,
             bNabla2_A,
             bNabla2_B,
+            bphi_A,
+            bphi_B,
+            f_NL,
             c0,
             c2,
         ]:
@@ -1431,7 +1460,16 @@ class Model:
         return [derivatives_0, derivatives_2, derivatives_4]
 
     def eval_derivative(
-        self, paramname, AorB, h, bias_setA, bias_setB, stoch_set, nbarA_loc, nbarB_loc
+        self,
+        paramname,
+        AorB,
+        h,
+        bias_setA,
+        bias_setB,
+        stoch_set,
+        nbarA_loc,
+        nbarB_loc,
+        f_NL_value,
     ):
         """
         Evaluate the precomputed symbolic derivatives numerically for the active parameter.
@@ -1448,12 +1486,22 @@ class Model:
 
         if not self.RSD:
             # Unpack bias parameters
-            b1_A_value, b2_A_value, bG2_A_value, bGamma3_A_value, bNabla2_A_value = (
-                bias_setA
-            )
-            b1_B_value, b2_B_value, bG2_B_value, bGamma3_B_value, bNabla2_B_value = (
-                bias_setB
-            )
+            (
+                b1_A_value,
+                b2_A_value,
+                bG2_A_value,
+                bGamma3_A_value,
+                bNabla2_A_value,
+                bphi_A_value,
+            ) = bias_setA
+            (
+                b1_B_value,
+                b2_B_value,
+                bG2_B_value,
+                bGamma3_B_value,
+                bNabla2_B_value,
+                bphi_B_value,
+            ) = bias_setB
 
             # Unpack stochastic parameters
             cshot, c0_value, c2_value = stoch_set
@@ -1464,11 +1512,13 @@ class Model:
             bG2_A, bG2_B = sp.symbols("bG2_A bG2_B")
             bGamma3_A, bGamma3_B = sp.symbols("bGamma3_A bGamma3_B")
             bNabla2_A, bNabla2_B = sp.symbols("bNabla2_A bNabla2_B")
+            bphi_A, bphi_B = sp.symbols("bphi_A bphi_B")
             c0, c2, h_loc, nbarmix, knormh_loc, knorm_loc = sp.symbols(
                 "c0 c2 h_loc nbarmix knormh_loc knorm_loc"
             )
             k_loc = sp.symbols("k_loc")
-            pk_mult_symbolic = sp.symbols("pk_mult_symbolic0:15")
+            f_NL = sp.symbols("f_NL")
+            pk_mult_symbolic = sp.symbols("pk_mult_symbolic0:54")
 
             # Map parameters to their symbolic counterparts
             # idx_deriv = [0, 0, b1_A, b2_A, bG2_A, bGamma3_A, bNabla2_A, 1, c0, c2]
@@ -1482,6 +1532,10 @@ class Model:
                 variable = [bGamma3_A, bGamma3_B]
             if paramname == "bNabla2_":
                 variable = [bNabla2_A, bNabla2_B]
+            if paramname == "bphi_":
+                variable = [bphi_A, bphi_B]
+            if paramname == "f_NL_":
+                variable = [f_NL, f_NL]  # f_NL is global, not tracer-specific
             if paramname == "c0_":
                 variable = [c0, c0]
             if paramname == "c2_":
@@ -1502,6 +1556,9 @@ class Model:
                 bGamma3_B: bGamma3_B_value,
                 bNabla2_A: bNabla2_A_value,
                 bNabla2_B: bNabla2_B_value,
+                bphi_A: bphi_A_value,
+                bphi_B: bphi_B_value,
+                f_NL: f_NL_value,
                 c0: c0_value,
                 c2: c2_value,
                 h_loc: h,
