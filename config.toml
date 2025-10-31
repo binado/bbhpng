@@ -45,3 +45,6 @@ redshift = 0
 [caching]
 open_precomputed_files = true
 save_precomputed_files = false
+
+[plotting]
+verbose = false
