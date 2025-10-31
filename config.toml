@@ -38,7 +38,7 @@ nonlin = false
 nocross_stoch = false
 RSD = false
 multipoles = [true, true, true]
-active_bias = [true, true, true, true, true, true, true, true, true]
+active_bias = [true, true, true, true, true, true, true, true, true, true]
 active_stoch = [true, true, true]
 redshift = 0
 
