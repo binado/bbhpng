@@ -24,17 +24,26 @@ from typing import Dict, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+import fiducial_cosmo
+from config import Config
+
+# Load configuration
+config = Config.from_cli()
+verbose = config["plotting.verbose"]
+
 # -----------------------------
 # User controls
 # -----------------------------
 z_list = [0.0, 1.0, 2.0]
 f_nl_list = [-50, 0, 50]
-h = 0.6736
-kmin_h, kmax_h, nk = 5e-4 * h, 1e-1 * h, 400
-delta_c = 1.686
-p_value = 2.0
+h = config["cosmology.h_fid"]
+kmin_h = config["tracers.kmin_value"] * h
+kmax_h = config["tracers.kmax_value"] * h
+nk = 400
+delta_c = fiducial_cosmo.SPHERICAL_COLLAPSE_THRESHOLD
+p_value = config["bias.universality_relation_p"]
 b1_value = 1.0  ## fixed in z
-nbar = 2e-7
+nbar = config["tracers.nbar_value"]
 
 
 def b1_of_z(z: float) -> float:
@@ -227,9 +236,10 @@ for z in z_list:
         Pg_results[(z, fNL)] = (k_grid, Pg)
 
 # Minimal confirmation printout
-print("Done. Available keys for Pg_results (z, fNL):")
-for key in sorted(Pg_results.keys()):
-    print("  ", key)
+if verbose:
+    print("Done. Available keys for Pg_results (z, fNL):")
+    for key in sorted(Pg_results.keys()):
+        print("  ", key)
 
 # Example for saving one case:
 # z0, f0 = 0.0, 50
@@ -273,4 +283,5 @@ outpath = Path("Pg_fnl_colored.png")
 plt.savefig(outpath, dpi=180)
 plt.show()
 
-print(f"Saved combined PNG bias plot to: {outpath}")
+if verbose:
+    print(f"Saved combined PNG bias plot to: {outpath}")
